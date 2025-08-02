@@ -1,17 +1,21 @@
 import * as readline from 'readline';
+import { AmazonQService } from './amazon-q-service';
 
 export class AIAssistant {
   private rl: readline.Interface;
+  private amazonQ: AmazonQService;
 
   constructor() {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
+    this.amazonQ = new AmazonQService();
   }
 
   async startChat(): Promise<void> {
-    console.log('🤖 Assistente IA iniciado! Digite "sair" para encerrar.\n');
+    const mode = this.amazonQ.isConfigured() ? 'Amazon Q' : 'Offline';
+    console.log(`🤖 Assistente IA iniciado (${mode})! Digite "sair" para encerrar.\n`);
     
     while (true) {
       const question = await this.askQuestion('Você: ');
@@ -21,7 +25,7 @@ export class AIAssistant {
         break;
       }
 
-      const response = this.processQuestion(question);
+      const response = await this.processQuestion(question);
       console.log(`🤖 IA: ${response}\n`);
     }
     
@@ -36,7 +40,20 @@ export class AIAssistant {
     });
   }
 
-  private processQuestion(question: string): string {
+  async processQuestion(question: string): Promise<string> {
+    // Tentar Amazon Q primeiro se configurado
+    if (this.amazonQ.isConfigured()) {
+      const amazonQResponse = await this.amazonQ.askQuestion(question);
+      if (!amazonQResponse.includes('Erro ao conectar')) {
+        return amazonQResponse;
+      }
+    }
+
+    // Fallback para respostas locais
+    return this.getOfflineResponse(question);
+  }
+
+  private getOfflineResponse(question: string): string {
     const q = question.toLowerCase();
 
     // Programação

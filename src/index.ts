@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import 'dotenv/config';
 import { Command } from 'commander';
 import { AIAssistant } from './ai-assistant';
 
@@ -22,22 +23,20 @@ program
   .command('ask')
   .description('Faz uma pergunta única à IA')
   .argument('<question>', 'sua pergunta')
-  .action((question) => {
+  .action(async (question) => {
     const assistant = new AIAssistant();
-    console.log(`🤖 IA: ${(assistant as any).processQuestion(question)}`);
+    const response = await assistant.processQuestion(question);
+    console.log(`🤖 IA: ${response}`);
   });
 
 program
   .command('calc')
   .description('Calculadora rápida')
   .argument('<expression>', 'expressão matemática')
-  .action((expression) => {
-    try {
-      const result = eval(expression.replace(/[^0-9+\-*/().]/g, ''));
-      console.log(`📊 Resultado: ${result}`);
-    } catch {
-      console.log('❌ Expressão inválida');
-    }
+  .action(async (expression) => {
+    const assistant = new AIAssistant();
+    const response = await assistant.processQuestion(`Calcule: ${expression}`);
+    console.log(`📊 ${response}`);
   });
 
 program.parse();
